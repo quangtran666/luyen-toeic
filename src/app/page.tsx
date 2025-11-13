@@ -1,63 +1,63 @@
-import Image from "next/image";
+'use client';
+
+import { PracticeInput } from '@/features/practice/components/practice-input';
+import { AnalysisRenderer } from '@/features/practice/components/analysis-renderer';
+import { usePractice } from '@/features/practice/hooks/use-practice';
+import { BookOpen } from 'lucide-react';
 
 export default function Home() {
+  const { analysis, isProcessing, submitQuestionAsync, error } = usePractice();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm transition-shadow dark:bg-zinc-950/80">
+        <div className="container mx-auto px-4 py-4 sm:py-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 sm:size-12">
+              <BookOpen className="size-5 sm:size-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                Luyện tập TOEIC Reading
+              </h1>
+              <p className="truncate text-xs text-muted-foreground sm:text-sm">
+                Parts 5, 6, 7 - Giải thích chi tiết bằng tiếng Việt
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+          {/* Input Section */}
+          <section 
+            className="animate-in fade-in slide-in-from-top-4 rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-950 sm:p-6"
+            role="region"
+            aria-label="Khu vực nhập câu hỏi"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <PracticeInput
+              onSubmit={submitQuestionAsync}
+              isProcessing={isProcessing}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </section>
+
+          {/* Analysis Section - Shows structured TOEIC analysis */}
+          {(analysis || isProcessing || error) && (
+            <section 
+              className="animate-in fade-in slide-in-from-bottom-4 space-y-4"
+              role="region"
+              aria-label="Kết quả phân tích"
+            >
+              <AnalysisRenderer 
+                analysis={analysis} 
+                isLoading={isProcessing}
+                error={error}
+              />
+            </section>
+          )}
         </div>
       </main>
     </div>
