@@ -1,0 +1,14 @@
+# CSS files (Tailwind v4 syntax not supported by Biome)
+**/*.css
+
+# Third-party components
+src/components/ai-elements/**
+src/components/ui/**
+
+# Build outputs
+.next/**
+out/**
+build/**
+
+# Dependencies
+node_modules/**

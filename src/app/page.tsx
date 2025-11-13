@@ -1,65 +1,120 @@
-'use client';
+"use client";
 
-import { PracticeInput } from '@/features/practice/components/practice-input';
-import { AnalysisRenderer } from '@/features/practice/components/analysis-renderer';
-import { usePractice } from '@/features/practice/hooks/use-practice';
-import { BookOpen } from 'lucide-react';
+import { MessageCircle } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { AnalysisRenderer } from "@/features/practice/components/analysis-renderer";
+import { ConversationContainer } from "@/features/practice/components/conversation-container";
+import { PracticeInput } from "@/features/practice/components/practice-input";
+import { UserMessage } from "@/features/practice/components/user-message";
+import { Button } from "@/components/ui/button";
+import { usePractice } from "@/features/practice/hooks/use-practice";
+import type {
+	QuestionExplanation,
+	QuestionInput,
+} from "@/features/practice/types/practice.types";
 
 export default function Home() {
-  const { analysis, isProcessing, submitQuestionAsync, error } = usePractice();
+	const {
+		messages,
+		analysis,
+		isProcessing,
+		submitQuestionAsync,
+		retryLastQuestion,
+		reset,
+		error,
+	} = usePractice();
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm transition-shadow dark:bg-zinc-950/80">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 sm:size-12">
-              <BookOpen className="size-5 sm:size-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                Luyện tập TOEIC Reading
-              </h1>
-              <p className="truncate text-xs text-muted-foreground sm:text-sm">
-                Parts 5, 6, 7 - Giải thích chi tiết bằng tiếng Việt
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+	const lastMessageRef = useRef<HTMLDivElement>(null);
+	const previousMessageCountRef = useRef(messages.length);
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 sm:py-8">
-        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
-          {/* Input Section */}
-          <section 
-            className="animate-in fade-in slide-in-from-top-4 rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-950 sm:p-6"
-            role="region"
-            aria-label="Khu vực nhập câu hỏi"
-          >
-            <PracticeInput
-              onSubmit={submitQuestionAsync}
-              isProcessing={isProcessing}
-            />
-          </section>
+	// Focus management for new messages
+	useEffect(() => {
+		if (messages.length > previousMessageCountRef.current) {
+			// New message added, scroll and announce
+			lastMessageRef.current?.scrollIntoView({
+				behavior: "smooth",
+				block: "nearest",
+			});
+		}
+		previousMessageCountRef.current = messages.length;
+	}, [messages.length]);
 
-          {/* Analysis Section - Shows structured TOEIC analysis */}
-          {(analysis || isProcessing || error) && (
-            <section 
-              className="animate-in fade-in slide-in-from-bottom-4 space-y-4"
-              role="region"
-              aria-label="Kết quả phân tích"
-            >
-              <AnalysisRenderer 
-                analysis={analysis} 
-                isLoading={isProcessing}
-                error={error}
-              />
-            </section>
-          )}
-        </div>
-      </main>
-    </div>
-  );
+	return (
+		<div className="flex h-screen flex-col bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 supports-[height:100dvh]:h-dvh">
+			{/* Main Content */}
+			<main className="flex flex-1 overflow-hidden">
+				<div className="mx-auto flex h-full w-full max-w-[1400px] flex-col px-3 sm:px-4 md:px-6 lg:px-8">
+					{/* Conversation Section - Scrollable */}
+					<section
+						className="relative flex-1 overflow-y-auto py-4 sm:py-6 md:py-8"
+						role="region"
+						aria-label="Cuộc trò chuyện"
+					>
+						{/* New Message Button - Fixed at top left */}
+						{messages.length > 0 && (
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={reset}
+								className="fixed left-4 top-4 z-50 size-12 cursor-pointer rounded-full shadow-lg sm:left-6 sm:top-6"
+								title="Tạo cuộc trò chuyện mới"
+							>
+								<MessageCircle className="size-5" />
+							</Button>
+						)}
+
+						<ConversationContainer isEmpty={messages.length === 0}>
+							{messages.map((message, index) => {
+								const isLastMessage = index === messages.length - 1;
+
+								if (message.role === "user") {
+									return (
+										<div
+											key={message.id}
+											ref={isLastMessage ? lastMessageRef : null}
+										>
+											<UserMessage input={message.content as QuestionInput} />
+										</div>
+									);
+								}
+
+								// For assistant messages, use saved content if available, otherwise use streaming analysis
+								const messageAnalysis = message.isStreaming
+									? analysis
+									: ({
+											questions: message.content,
+										} as typeof analysis);
+
+								return (
+									<div
+										key={message.id}
+										ref={isLastMessage ? lastMessageRef : null}
+									>
+										<AnalysisRenderer
+											analysis={messageAnalysis}
+											isLoading={message.isStreaming || false}
+											error={error}
+											onRetry={retryLastQuestion}
+										/>
+									</div>
+								);
+							})}
+						</ConversationContainer>
+					</section>
+
+					{/* Input Section - Fixed at bottom */}
+					<section
+						className="shrink-0 py-3 sm:py-4"
+						role="region"
+						aria-label="Khu vực nhập câu hỏi"
+					>
+						<PracticeInput
+							onSubmit={submitQuestionAsync}
+							isProcessing={isProcessing}
+						/>
+					</section>
+				</div>
+			</main>
+		</div>
+	);
 }

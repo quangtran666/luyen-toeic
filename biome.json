@@ -30,17 +30,19 @@
 			"!out/**",
 			"!build/**",
 			"!next-env.d.ts",
-			"!.next/**",
-			"!out/**",
-			"!build/**",
-			"!next-env.d.ts",
-			"!.next/**",
-			"!out/**",
-			"!build/**",
-			"!next-env.d.ts"
+			"!**/*.css",
+			"!src/components/ai-elements/**",
+			"!src/components/ui/**"
 		]
 	},
 	"javascript": { "formatter": { "quoteStyle": "double" }, "globals": [] },
+	"css": {
+		"parser": {
+			"cssModules": false,
+			"allowWrongLineComments": true,
+			"tailwindDirectives": true
+		}
+	},
 	"overrides": [
 		{
 			"includes": ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
