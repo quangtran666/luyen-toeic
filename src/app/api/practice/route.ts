@@ -14,11 +14,31 @@ export async function POST(request: Request) {
 			mode,
 			part,
 			content,
+			apiKey,
+			model: modelName,
 		}: {
 			mode: "text" | "image";
 			part: "5" | "6" | "7" | "auto";
 			content: string;
+			apiKey: string;
+			model: string;
 		} = await request.json();
+
+		// Validate API key presence
+		if (!apiKey || apiKey.trim() === "") {
+			return new Response(JSON.stringify({ error: "API key là bắt buộc" }), {
+				status: 400,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
+
+		// Validate model presence
+		if (!modelName || modelName.trim() === "") {
+			return new Response(JSON.stringify({ error: "Model là bắt buộc" }), {
+				status: 400,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
 
 		// Validate image content format
 		if (mode === "image") {
@@ -30,13 +50,8 @@ export async function POST(request: Request) {
 			}
 		}
 
-		const apiKey = process.env.OPENROUTER_API_KEY;
-		if (!apiKey) {
-			throw new Error("OPENROUTER_API_KEY is not configured");
-		}
-
 		const openrouter = createOpenRouter({ apiKey });
-		const model = openrouter("qwen/qwen3-vl-8b-instruct");
+		const model = openrouter(modelName);
 
 		// Build enhanced system prompt with detailed explanation structure
 		let systemPrompt = `Bạn là một trợ lý TOEIC chuyên nghiệp. Nhiệm vụ của bạn là phân tích câu hỏi TOEIC Reading và cung cấp giải thích CỰC KỲ CHI TIẾT bằng tiếng Việt đơn giản, dễ hiểu.

@@ -2,6 +2,7 @@
 
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { useState } from "react";
+import { useConfiguration } from "@/features/configuration/context/configuration-context";
 import { toeicAnalysisSchema } from "../lib/schema";
 import type {
 	ConversationMessage,
@@ -10,6 +11,7 @@ import type {
 import { generateMessageId } from "../types/practice.types";
 
 export function usePractice() {
+	const { configuration } = useConfiguration();
 	const [messages, setMessages] = useState<ConversationMessage[]>([]);
 
 	const { object, submit, isLoading, error, stop } = useObject({
@@ -63,6 +65,13 @@ export function usePractice() {
 
 	const submitQuestionAsync = (input: QuestionInput): void => {
 		try {
+			if (!configuration) {
+				console.error(
+					"Configuration is missing. Please configure model and API key.",
+				);
+				return;
+			}
+
 			addUserMessage(input);
 			addAssistantMessage();
 
@@ -70,6 +79,8 @@ export function usePractice() {
 				mode: input.mode,
 				part: input.part,
 				content: input.content,
+				apiKey: configuration.apiKey,
+				model: configuration.model,
 			});
 		} catch (err) {
 			console.error("Error submitting question:", err);

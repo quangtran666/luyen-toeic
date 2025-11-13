@@ -24,9 +24,10 @@ Hệ thống cần cho phép người dùng cấu hình model AI và API key c�
 
 1. WHEN the User clicks the settings icon at the top right corner, THE System SHALL display a Settings Dialog
 2. THE Settings Dialog SHALL contain input fields for model selection and API key entry
-3. THE Settings Dialog SHALL provide a save button to persist the configuration
-4. WHEN the User submits valid configuration data, THE System SHALL store the configuration in local storage
-5. WHEN the User submits valid configuration data, THE System SHALL close the Settings Dialog
+3. THE Settings Dialog SHALL allow the User to select a model from predefined options or enter a custom model name
+4. THE Settings Dialog SHALL provide a save button to persist the configuration
+5. WHEN the User submits valid configuration data, THE System SHALL store the configuration in local storage
+6. WHEN the User submits valid configuration data, THE System SHALL close the Settings Dialog
 
 ### Requirement 2
 
@@ -60,3 +61,15 @@ Hệ thống cần cho phép người dùng cấu hình model AI và API key c�
 2. WHEN configuration is complete, THE System SHALL display the settings icon in normal state
 3. THE System SHALL provide validation feedback for invalid API key format
 4. THE System SHALL provide validation feedback for missing required fields
+
+### Requirement 5
+
+**User Story:** As a User, I want to use custom AI models not in the predefined list, so that I can experiment with new or specialized models
+
+#### Acceptance Criteria
+
+1. THE Settings Dialog SHALL provide an option to enter a custom model name
+2. WHEN the User selects the custom model option, THE System SHALL display a text input field for model name entry
+3. WHEN the User enters a custom model name, THE System SHALL validate that the field is not empty
+4. WHEN the User saves a custom model configuration, THE System SHALL store the custom model name in local storage
+5. WHEN the User reopens the Settings Dialog with a custom model configured, THE System SHALL display the custom model name in the appropriate field

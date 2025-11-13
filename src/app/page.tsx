@@ -1,19 +1,28 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ConfigurationGuard } from "@/features/configuration/components/configuration-guard";
+import { SettingsButton } from "@/features/configuration/components/settings-button";
+import { SettingsDialog } from "@/features/configuration/components/settings-dialog";
+import { ConfigurationProvider } from "@/features/configuration/context/configuration-context";
 import { AnalysisRenderer } from "@/features/practice/components/analysis-renderer";
 import { ConversationContainer } from "@/features/practice/components/conversation-container";
 import { PracticeInput } from "@/features/practice/components/practice-input";
 import { UserMessage } from "@/features/practice/components/user-message";
-import { Button } from "@/components/ui/button";
 import { usePractice } from "@/features/practice/hooks/use-practice";
-import type {
-	QuestionExplanation,
-	QuestionInput,
-} from "@/features/practice/types/practice.types";
+import type { QuestionInput } from "@/features/practice/types/practice.types";
 
 export default function Home() {
+	return (
+		<ConfigurationProvider>
+			<HomeContent />
+		</ConfigurationProvider>
+	);
+}
+
+function HomeContent() {
 	const {
 		messages,
 		analysis,
@@ -26,6 +35,7 @@ export default function Home() {
 
 	const lastMessageRef = useRef<HTMLDivElement>(null);
 	const previousMessageCountRef = useRef(messages.length);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	// Focus management for new messages
 	useEffect(() => {
@@ -41,6 +51,10 @@ export default function Home() {
 
 	return (
 		<div className="flex h-screen flex-col bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 supports-[height:100dvh]:h-dvh">
+			{/* Settings Button - Fixed at top right */}
+			<SettingsButton onClick={() => setSettingsOpen(true)} />
+			<SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+
 			{/* Main Content */}
 			<main className="flex flex-1 overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-[1400px] flex-col px-3 sm:px-4 md:px-6 lg:px-8">
@@ -108,10 +122,12 @@ export default function Home() {
 						role="region"
 						aria-label="Khu vực nhập câu hỏi"
 					>
-						<PracticeInput
-							onSubmit={submitQuestionAsync}
-							isProcessing={isProcessing}
-						/>
+						<ConfigurationGuard>
+							<PracticeInput
+								onSubmit={submitQuestionAsync}
+								isProcessing={isProcessing}
+							/>
+						</ConfigurationGuard>
 					</section>
 				</div>
 			</main>
