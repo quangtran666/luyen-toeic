@@ -1,0 +1,119 @@
+# Implementation Plan
+
+- [x] 1. Update type definitions and constants
+  - [x] 1.1 Update QuestionInput type to support image arrays
+    - Modify `content` field to accept `string | string[]`
+    - Update `imageFile` to `imageFiles` as optional array
+    - _Requirements: 1.1, 4.1_
+  - [x] 1.2 Create ImageData interface
+    - Define interface with id, file, base64, and preview fields
+    - _Requirements: 1.1, 1.4_
+  - [x] 1.3 Add image constraints constants
+    - Create MAX_COUNT (5), MAX_SIZE (5MB), ALLOWED_FORMATS constants
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [x] 2. Update Practice API to support multiple images
+  - [x] 2.1 Modify request validation logic
+    - Update content validation to handle both string and array
+    - Add array length validation for image mode
+    - _Requirements: 4.1, 3.3_
+  - [x] 2.2 Implement multi-image message builder
+    - Build message content array with text and multiple image objects
+    - Ensure proper base64 format for each image
+    - Update prompt text to indicate number of images
+    - _Requirements: 4.1, 4.2_
+  - [x] 2.3 Change default part to "auto"
+    - Update any hardcoded defaults from "5" to "auto"
+    - _Requirements: 2.1_
+
+- [x] 3. Refactor ImageInput component for multi-image support
+  - [x] 3.1 Update component interface and props
+    - Change `onImageSelect` to `onImagesSelect` accepting ImageData array
+    - Update `value` prop to accept ImageData array
+    - Add `maxImages` prop with default value of 5
+    - _Requirements: 1.1, 3.3_
+  - [x] 3.2 Implement multi-image state management
+    - Replace single image state with images array
+    - Add loading state tracking for individual images
+    - Implement unique ID generation for each image
+    - _Requirements: 1.1, 5.1_
+  - [x] 3.3 Create image validation and conversion utilities
+    - Update validateImage to work with individual files
+    - Implement batch file validation
+    - Add max count validation (5 images)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [x] 3.4 Implement multiple file selection handler
+    - Update file input to accept multiple files
+    - Process FileList and convert to ImageData array
+    - Handle validation errors for each file
+    - _Requirements: 1.1, 3.4_
+  - [x] 3.5 Update paste handler for multi-image
+    - Modify paste event to add images to existing collection
+    - Respect max image limit
+    - _Requirements: 1.2_
+  - [x] 3.6 Implement drag-and-drop support
+    - Add drag-and-drop event handlers
+    - Process dropped files similar to file selection
+    - _Requirements: 1.3_
+  - [x] 3.7 Build responsive image preview grid
+    - Create grid layout (1 col mobile, 2-3 cols desktop)
+    - Display each image with preview, filename, and size
+    - Add individual remove buttons per image
+    - Implement loading states during conversion
+    - _Requirements: 1.4, 1.5, 5.1, 5.4_
+  - [x] 3.8 Add clear all functionality
+    - Implement button to remove all images at once
+    - Update empty state display
+    - _Requirements: 5.3_
+
+- [x] 4. Update PracticeInput component
+  - [x] 4.1 Change default part selection to "auto"
+    - Update useState initial value from "5" to "auto"
+    - _Requirements: 2.1_
+  - [x] 4.2 Update state to handle multiple images
+    - Replace single image state with images array
+    - Update ImageInput integration to use new interface
+    - _Requirements: 1.1, 4.1_
+  - [x] 4.3 Modify submit handler for image arrays
+    - Build QuestionInput with images array
+    - Serialize all base64 strings for API
+    - Clear all images after successful submission
+    - _Requirements: 4.1, 4.2_
+  - [x] 4.4 Update validation logic
+    - Check for either text content or images array
+    - Display appropriate error messages
+    - _Requirements: 3.4_
+  - [x] 4.5 Add image count badge display
+    - Show "X/5 images" indicator when images selected
+    - _Requirements: 5.2_
+
+- [x] 5. Update practice hook (use-practice.ts)
+  - [x] 5.1 Modify submitQuestionAsync to handle image arrays
+    - Update API call to send content as array when multiple images
+    - Ensure proper serialization of ImageData array
+    - _Requirements: 4.1, 4.2_
+
+- [x] 6. Integration and polish
+  - [x] 6.1 Add loading and error states
+    - Implement per-image loading indicators
+    - Display validation errors clearly
+    - _Requirements: 5.1, 3.4_
+  - [ ]* 6.2 Implement accessibility features
+    - Add proper ARIA labels
+    - Ensure keyboard navigation works
+    - Add screen reader announcements
+    - _Requirements: 5.2_
+  - [ ]* 6.3 Add animations and transitions
+    - Fade-in for new images
+    - Smooth removal animations
+    - Loading spinners
+    - _Requirements: 5.2_
+  - [x] 6.4 Verify responsive behavior
+    - Test grid layout on mobile and desktop
+    - Ensure touch interactions work on mobile
+    - _Requirements: 5.4_
+  - [x] 6.5 Run type checking and linting
+    - Execute `bun run typecheck`
+    - Execute `bun run biome:fix`
+    - Fix any type errors or lint issues
+    - _Requirements: All_

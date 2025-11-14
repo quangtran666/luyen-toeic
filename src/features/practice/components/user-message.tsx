@@ -23,32 +23,46 @@ const PART_LABELS: Record<string, string> = {
 };
 
 export function UserMessage({ input }: UserMessageProps) {
-	const { mode, part, content, imageFile } = input;
+	const { mode, part, content, imageFiles } = input;
 	const [showLightbox, setShowLightbox] = useState(false);
+	const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+	const images = mode === "image" && Array.isArray(content) ? content : [];
+	const hasImages = images.length > 0;
 
 	return (
 		<>
 			<Message from="user" role="article" aria-label="Câu hỏi của bạn">
-				{mode === "image" && content && (
+				{mode === "image" && hasImages && (
 					<MessageAttachments>
-						<div
-							onClick={() => setShowLightbox(true)}
-							className="cursor-pointer"
-						>
-							<MessageAttachment
-								data={{
-									type: "file",
-									url: content,
-									mediaType: "image/png",
-									filename: imageFile?.name || "question-image.png",
+						{images.map((imageUrl, index) => (
+							<div
+								key={index}
+								onClick={() => {
+									setSelectedImageIndex(index);
+									setShowLightbox(true);
 								}}
-								aria-label={`Hình ảnh câu hỏi: ${imageFile?.name || "question-image.png"}`}
-							/>
-						</div>
+								className="cursor-pointer"
+							>
+								<MessageAttachment
+									data={{
+										type: "file",
+										url: imageUrl,
+										mediaType: "image/png",
+										filename:
+											imageFiles?.[index]?.name ||
+											`question-image-${index + 1}.png`,
+									}}
+									aria-label={`Hình ảnh câu hỏi ${index + 1}: ${imageFiles?.[index]?.name || `question-image-${index + 1}.png`}`}
+								/>
+							</div>
+						))}
 					</MessageAttachments>
 				)}
 				<MessageContent>
-					{mode === "text" && <p className="whitespace-pre-wrap">{content}</p>}
+					{mode === "text" && typeof content === "string" && (
+						<p className="whitespace-pre-wrap">{content}</p>
+					)}
 					<div
 						className="mt-2 flex items-center gap-2"
 						role="group"
@@ -68,14 +82,26 @@ export function UserMessage({ input }: UserMessageProps) {
 						>
 							{mode === "text" ? "Văn bản" : "Hình ảnh"}
 						</Badge>
+						{hasImages && images.length > 1 && (
+							<Badge
+								variant="outline"
+								className="text-xs"
+								aria-label={`Số lượng hình ảnh: ${images.length}`}
+							>
+								{images.length} hình ảnh
+							</Badge>
+						)}
 					</div>
 				</MessageContent>
 			</Message>
 
-			{showLightbox && mode === "image" && content && (
+			{showLightbox && hasImages && (
 				<ImageLightbox
-					src={content}
-					alt={imageFile?.name || "question-image.png"}
+					src={images[selectedImageIndex]}
+					alt={
+						imageFiles?.[selectedImageIndex]?.name ||
+						`question-image-${selectedImageIndex + 1}.png`
+					}
 					onClose={() => setShowLightbox(false)}
 				/>
 			)}

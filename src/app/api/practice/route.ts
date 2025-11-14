@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 		}: {
 			mode: "text" | "image";
 			part: "5" | "6" | "7" | "auto";
-			content: string;
+			content: string | string[];
 			apiKey: string;
 			model: string;
 		} = await request.json();
@@ -42,11 +42,26 @@ export async function POST(request: Request) {
 
 		// Validate image content format
 		if (mode === "image") {
-			if (!content || content.trim() === "") {
-				return new Response(
-					JSON.stringify({ error: "Nội dung hình ảnh không hợp lệ" }),
-					{ status: 400, headers: { "Content-Type": "application/json" } },
-				);
+			if (Array.isArray(content)) {
+				if (content.length === 0 || content.length > 5) {
+					return new Response(
+						JSON.stringify({ error: "Số lượng hình ảnh phải từ 1 đến 5" }),
+						{ status: 400, headers: { "Content-Type": "application/json" } },
+					);
+				}
+				if (content.some((img) => !img || img.trim() === "")) {
+					return new Response(
+						JSON.stringify({ error: "Nội dung hình ảnh không hợp lệ" }),
+						{ status: 400, headers: { "Content-Type": "application/json" } },
+					);
+				}
+			} else {
+				if (!content || content.trim() === "") {
+					return new Response(
+						JSON.stringify({ error: "Nội dung hình ảnh không hợp lệ" }),
+						{ status: 400, headers: { "Content-Type": "application/json" } },
+					);
+				}
 			}
 		}
 
@@ -114,18 +129,31 @@ Sử dụng ngôn ngữ đơn giản, tránh thuật ngữ phức tạp. Mục t
 				? [
 						{
 							role: "user" as const,
-							content: [
-								{
-									type: "text" as const,
-									text: `Phân tích các câu hỏi TOEIC Part ${part} trong hình ảnh`,
-								},
-								{
-									type: "image" as const,
-									image: content.startsWith("data:")
-										? content
-										: `data:image/jpeg;base64,${content}`,
-								},
-							],
+							content: Array.isArray(content)
+								? [
+										{
+											type: "text" as const,
+											text: `Phân tích các câu hỏi TOEIC Part ${part} trong ${content.length} hình ảnh`,
+										},
+										...content.map((img) => ({
+											type: "image" as const,
+											image: img.startsWith("data:")
+												? img
+												: `data:image/jpeg;base64,${img}`,
+										})),
+									]
+								: [
+										{
+											type: "text" as const,
+											text: `Phân tích các câu hỏi TOEIC Part ${part} trong hình ảnh`,
+										},
+										{
+											type: "image" as const,
+											image: content.startsWith("data:")
+												? content
+												: `data:image/jpeg;base64,${content}`,
+										},
+									],
 						},
 					]
 				: [

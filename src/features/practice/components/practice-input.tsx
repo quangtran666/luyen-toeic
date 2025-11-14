@@ -1,8 +1,9 @@
 "use client";
 
-import { AlertCircle, Loader2, Plus, Send, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { AlertCircle, Loader2, Send } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -13,7 +14,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { PracticePart, QuestionInput } from "../types/practice.types";
+import type {
+	ImageData,
+	PracticePart,
+	QuestionInput,
+} from "../types/practice.types";
+import { ImageInput } from "./image-input";
 
 interface PracticeInputProps {
 	onSubmit: (input: QuestionInput) => void;
@@ -33,79 +39,35 @@ export function PracticeInput({
 	isProcessing,
 	onMessageSent,
 }: PracticeInputProps) {
-	const [selectedPart, setSelectedPart] = useState<PracticePart>("5");
+	const [selectedPart, setSelectedPart] = useState<PracticePart>("auto");
 	const [textContent, setTextContent] = useState("");
-	const [imageFile, setImageFile] = useState<File | null>(null);
-	const [imageBase64, setImageBase64] = useState<string>("");
+	const [images, setImages] = useState<ImageData[]>([]);
 	const [validationError, setValidationError] = useState<string | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
 
-	const handleFileSelect = (file: File) => {
-		if (file.size > 10 * 1024 * 1024) {
-			setValidationError(
-				"Hình ảnh quá lớn. Vui lòng chọn hình ảnh nhỏ hơn 10MB",
-			);
-			return;
-		}
-
-		const reader = new FileReader();
-		reader.onload = (event) => {
-			const base64 = event.target?.result as string;
-			setImageFile(file);
-			setImageBase64(base64);
+	const handleImagesSelect = (selectedImages: ImageData[]) => {
+		setImages(selectedImages);
+		if (selectedImages.length > 0) {
 			setTextContent("");
-			setValidationError(null);
-		};
-		reader.onerror = () => {
-			setValidationError("Không thể đọc hình ảnh. Vui lòng thử lại");
-		};
-		reader.readAsDataURL(file);
-	};
-
-	const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-		const items = e.clipboardData?.items;
-		if (!items) return;
-
-		for (const item of Array.from(items)) {
-			if (item.type.startsWith("image/")) {
-				e.preventDefault();
-				const file = item.getAsFile();
-				if (!file) continue;
-				handleFileSelect(file);
-				break;
-			}
 		}
-	};
-
-	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file) {
-			handleFileSelect(file);
-		}
-	};
-
-	const handleClearImage = () => {
-		setImageFile(null);
-		setImageBase64("");
 		setValidationError(null);
-		if (fileInputRef.current) {
-			fileInputRef.current.value = "";
-		}
 	};
 
-	const validateInput = (): boolean => {
-		// Check if we have image
-		if (imageFile && imageBase64) {
+	const handleImageError = (error: string) => {
+		setValidationError(error);
+	};
+
+	const validateInput = useCallback((): boolean => {
+		// Check if we have images
+		if (images.length > 0) {
 			setValidationError(null);
 			return true;
 		}
 
 		// Otherwise validate text
 		if (!textContent.trim()) {
-			setValidationError(
-				"Vui lòng nhập nội dung câu hỏi TOEIC để nhận giải thích chi tiết",
-			);
+			setValidationError("Vui lòng nhập nội dung hoặc chọn hình ảnh");
 			return false;
 		}
 		if (textContent.trim().length < 10) {
@@ -120,56 +82,71 @@ export function PracticeInput({
 		}
 		setValidationError(null);
 		return true;
-	};
+	}, [images, textContent]);
 
-	const handleSubmit = () => {
+	const handleSubmit = useCallback(() => {
 		if (!validateInput()) {
 			return;
 		}
 
-		const hasImage = imageFile && imageBase64;
+		const hasImages = images.length > 0;
 		const input: QuestionInput = {
-			mode: hasImage ? "image" : "text",
+			mode: hasImages ? "image" : "text",
 			part: selectedPart,
-			content: hasImage ? imageBase64 : textContent,
-			imageFile: hasImage ? imageFile : undefined,
+			content: hasImages ? images.map((img) => img.base64) : textContent,
+			imageFiles: hasImages ? images.map((img) => img.file) : undefined,
 		};
 
 		onSubmit(input);
 
 		setTextContent("");
-		setImageFile(null);
-		setImageBase64("");
+		setImages([]);
 		setValidationError(null);
-		if (fileInputRef.current) {
-			fileInputRef.current.value = "";
-		}
 
 		onMessageSent?.();
-	};
+	}, [images, onMessageSent, onSubmit, selectedPart, textContent, validateInput]);
 
-	const handleKeyDown = (e: React.KeyboardEvent) => {
+	const handleTextareaKeyDown = (
+		e: React.KeyboardEvent<HTMLTextAreaElement>,
+	) => {
 		if (e.key === "Enter" && !e.shiftKey && !isProcessing) {
 			e.preventDefault();
 			handleSubmit();
 		}
 	};
 
-	// Handle Enter key for image submission
 	useEffect(() => {
-		if (!imageFile || !imageBase64 || isProcessing) return;
+		if (images.length === 0) {
+			return;
+		}
 
-		const handleGlobalKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Enter" && !e.shiftKey) {
-				e.preventDefault();
-				handleSubmit();
+		const handleGlobalKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "Enter" || event.shiftKey || isProcessing) {
+				return;
 			}
+
+			const target = event.target as Node | null;
+			const container = containerRef.current;
+			const isBodyTarget =
+				target === document.body || target === document.documentElement;
+			const isInsideContainer =
+				container && target instanceof Node
+					? container.contains(target)
+					: false;
+
+			if (!isInsideContainer && !isBodyTarget) {
+				return;
+			}
+
+			event.preventDefault();
+			handleSubmit();
 		};
 
-		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [imageFile, imageBase64, isProcessing, handleSubmit]);
+		document.addEventListener("keydown", handleGlobalKeyDown);
+		return () => {
+			document.removeEventListener("keydown", handleGlobalKeyDown);
+		};
+	}, [handleSubmit, images.length, isProcessing]);
 
 	// Auto-resize textarea
 	useEffect(() => {
@@ -182,25 +159,33 @@ export function PracticeInput({
 	}, []);
 
 	return (
-		<div className="space-y-2">
-			{/* Image Preview */}
-			{imageFile && imageBase64 && (
-				<div className="relative rounded-md border bg-muted p-2">
-					<img
-						src={imageBase64}
-						alt="Câu hỏi đã dán"
-						className="max-h-[200px] w-full rounded object-contain"
-					/>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onClick={handleClearImage}
+		<div className="space-y-3">
+			{/* Image Input Section */}
+			{images.length === 0 && (
+				<ImageInput
+					onImagesSelect={handleImagesSelect}
+					onError={handleImageError}
+					disabled={isProcessing}
+					value={images}
+					maxImages={5}
+				/>
+			)}
+
+			{/* Image Preview with Count Badge */}
+			{images.length > 0 && (
+				<div className="space-y-2">
+					<div className="flex items-center gap-2">
+						<Badge variant="secondary" className="text-xs">
+							{images.length}/5 hình ảnh
+						</Badge>
+					</div>
+					<ImageInput
+						onImagesSelect={handleImagesSelect}
+						onError={handleImageError}
 						disabled={isProcessing}
-						className="absolute right-2 top-2 size-6 rounded-full bg-background/80 hover:bg-background"
-					>
-						<X className="size-3" />
-					</Button>
+						value={images}
+						maxImages={5}
+					/>
 				</div>
 			)}
 
@@ -214,46 +199,25 @@ export function PracticeInput({
 				</Alert>
 			)}
 
-			{/* Main Input Container */}
-			<div className="flex items-end gap-2 rounded-md border bg-background p-2">
-				{/* Add Image Button */}
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					onClick={() => fileInputRef.current?.click()}
-					disabled={isProcessing}
-					className="size-9 shrink-0"
-					title="Thêm hình ảnh"
-				>
-					<Plus className="size-5" />
-				</Button>
-
-				{/* Hidden File Input */}
-				<input
-					ref={fileInputRef}
-					type="file"
-					accept="image/*"
-					onChange={handleFileInputChange}
-					className="hidden"
-					aria-label="Chọn hình ảnh"
-				/>
-
+		{/* Main Input Container */}
+		<div
+			ref={containerRef}
+			className="flex items-end gap-2 rounded-md border bg-background p-2"
+		>
 				{/* Text Input */}
-				<Textarea
+		<Textarea
 					ref={textareaRef}
 					value={textContent}
 					onChange={(e) => setTextContent(e.target.value)}
-					onPaste={handlePaste}
-					onKeyDown={handleKeyDown}
-					disabled={isProcessing || !!(imageFile && imageBase64)}
+			onKeyDown={handleTextareaKeyDown}
+					disabled={isProcessing || images.length > 0}
 					placeholder="Ask anything"
 					className={cn(
 						"min-h-[40px] max-h-[200px] resize-none border-0 p-2 text-sm shadow-none focus-visible:ring-0",
 						isProcessing && "cursor-not-allowed opacity-50",
 					)}
 					rows={1}
-					aria-label="Nhập nội dung câu hỏi TOEIC hoặc dán hình ảnh"
+					aria-label="Nhập nội dung câu hỏi TOEIC hoặc chọn hình ảnh"
 				/>
 
 				{/* Part Selector */}

@@ -4,12 +4,25 @@ export type PracticePart = "5" | "6" | "7" | "auto";
 
 export type InputMode = "text" | "image";
 
+export interface ImageData {
+	id: string;
+	file: File;
+	base64: string;
+	preview: string;
+}
+
 export interface QuestionInput {
 	mode: InputMode;
 	part: PracticePart;
-	content: string; // Text content or base64 image
-	imageFile?: File; // Original file if image mode
+	content: string | string[]; // Text content or base64 image(s)
+	imageFiles?: File[]; // Original files if image mode
 }
+
+export const IMAGE_CONSTRAINTS = {
+	MAX_COUNT: 5,
+	MAX_SIZE: 5 * 1024 * 1024, // 5MB
+	ALLOWED_FORMATS: ["image/jpeg", "image/png"],
+} as const;
 
 export interface QuestionExplanation {
 	questionNumber: string; // e.g., "101" or "1"
